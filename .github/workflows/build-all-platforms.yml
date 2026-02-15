@@ -1,19 +1,17 @@
-name: Build Executables All Platforms
+name: Build Windows EXE Only
 
-on: [push, workflow_dispatch]
+on:
+  workflow_dispatch:          # только ручной запуск (чтобы не запускалось при каждом коммите)
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: windows-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Setup Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -23,24 +21,21 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests beautifulsoup4 pyinstaller
 
-      - name: Build with PyInstaller
+      - name: PyInstaller build
         run: |
-          if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            SEP=";"
-          else
-            SEP=":"
-          fi
+          pyinstaller ^
+            --onefile ^
+            --name DomenParser ^
+            --add-data "dates.txt;." ^
+            --add-data "webhook.txt;." ^
+            --add-data "2026-02-13.txt;." ^
+            --add-data "2026-02-14.txt;." ^
+            --add-data "2026-02-15.txt;." ^
+            Parser.py
 
-          pyinstaller --onefile --name DomenParser Parser.py \
-            --add-data "dates.txt${SEP}." \
-            --add-data "webhook.txt${SEP}." \
-            --add-data "2026-02-13.txt${SEP}." \
-            --add-data "2026-02-14.txt${SEP}." \
-            --add-data "2026-02-15.txt${SEP}."
-
-      - name: Upload artifact
+      - name: Upload the .exe artifact
         uses: actions/upload-artifact@v4
         with:
-          name: domenparser-${{ matrix.os }}
-          path: dist/DomenParser*
-          if-no-files-found: warn
+          name: DomenParser-Windows
+          path: dist/DomenParser.exe
+          if-no-files-found: error
