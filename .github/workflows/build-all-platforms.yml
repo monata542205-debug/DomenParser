@@ -23,14 +23,14 @@ jobs:
 
       - name: PyInstaller build
         run: |
-          pyinstaller ^
-            --onefile ^
-            --name DomenParser ^
-            --add-data "dates.txt;." ^
-            --add-data "webhook.txt;." ^
-            --add-data "2026-02-13.txt;." ^
-            --add-data "2026-02-14.txt;." ^
-            --add-data "2026-02-15.txt;." ^
+          pyinstaller `
+            --onefile `
+            --name DomenParser `
+            --add-data "dates.txt;." `
+            --add-data "webhook.txt;." `
+            --add-data "2026-02-13.txt;." `
+            --add-data "2026-02-14.txt;." `
+            --add-data "2026-02-15.txt;." `
             Parser.py
 
       - name: Upload the .exe artifact
