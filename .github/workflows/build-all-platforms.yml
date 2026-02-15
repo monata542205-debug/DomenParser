@@ -1,58 +1,46 @@
-name: Build Executables (Win / Linux / macOS)
+name: Build Executables All Platforms
 
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-  workflow_dispatch:          # позволяет запускать вручную
+on: [push, workflow_dispatch]
 
 jobs:
   build:
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false
       matrix:
         os: [windows-latest, ubuntu-latest, macos-latest]
 
-    env:
-      MAIN_PY_FILE: Parser.py     # ← имя твоего главного файла!
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'     # твоя версия Python (из кода — 3.x, подойдёт 3.11)
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
 
-    - name: Upgrade pip
-      run: python -m pip install --upgrade pip
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests beautifulsoup4 pyinstaller
 
-    - name: Install dependencies
-      run: |
-        if [ -f requirements.txt ]; then
-          pip install -r requirements.txt
-        fi
+      - name: Build with PyInstaller
+        run: |
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            SEP=";"
+          else
+            SEP=":"
+          fi
 
-    - name: Install PyInstaller
-      run: pip install pyinstaller
+          pyinstaller --onefile --name DomenParser Parser.py \
+            --add-data "dates.txt${SEP}." \
+            --add-data "webhook.txt${SEP}." \
+            --add-data "2026-02-13.txt${SEP}." \
+            --add-data "2026-02-14.txt${SEP}." \
+            --add-data "2026-02-15.txt${SEP}."
 
-    - name: Build with PyInstaller
-      run: |
-        pyinstaller --onefile --name DomainParser ${{ env.MAIN_PY_FILE }} --add-data "dates.txt;." --add-data "webhook.txt;." --add-data "2026-02-13.txt;." --add-data "2026-02-14.txt;." --add-data "2026-02-15.txt;."
-        # Флаги:
-        # --onefile → один .exe файл
-        # --dates.txt → добавляет твои .txt файлы в бандл (они нужны скрипту)
-        # --webhook.txt → добавляет твои .txt файлы в бандл (они нужны скрипту)
-        # --2026-02-13.txt → добавляет твои .txt файлы в бандл (они нужны скрипту)
-        # --2026-02-14.txt → добавляет твои .txt файлы в бандл (они нужны скрипту)
-        # --2026-02-15.txt → добавляет твои .txt файлы в бандл (они нужны скрипту)
-
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: executable-${{ matrix.os }}
-        path: dist/*
-        retention-days: 7
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: domenparser-${{ matrix.os }}
+          path: dist/DomenParser*
+          if-no-files-found: warn
